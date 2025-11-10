@@ -201,26 +201,36 @@ function applySearch(){
 }
 document.getElementById("searchInput").addEventListener("input", applySearch);
 
-function initializeFirestoreListener(){
-  const spinner=document.getElementById("loadingSpinner");
+// ✅ FIXED FIRESTORE LISTENER
+function initializeFirestoreListener() {
+  const spinner = document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
-  unsubscribe=db.collection("requests")
-    .orderBy("timestamp","asc")
-    .limit(LIMITNUMBER)
-    .onSnapshot(snapshot=>{
-      spinner.classList.add("hidden");
-      const body=document.getElementById("logsTableBody");
-      snapshot.docChanges().forEach(change=>{
-        if(change.type==="added"){
-          const d=change.doc.data();
-          allData.unshift(change.doc);
-          body.insertAdjacentHTML("afterbegin", createTableRow(change.doc, 1));
 
-          // ✅ Show Chrome notification for each new document
-          showSystemNotification("New Item", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
+  unsubscribe = db.collection("requests")
+    .orderBy("timestamp", "desc") // ✅ Desc for realtime updates
+    .limit(LIMITNUMBER)
+    .onSnapshot(snapshot => {
+      spinner.classList.add("hidden");
+      const body = document.getElementById("logsTableBody");
+
+      // Collect docs (arrive desc)
+      let newDocs = [];
+      snapshot.docChanges().forEach(change => {
+        if (change.type === "added") {
+          newDocs.push(change.doc);
         }
       });
-    },err=>{
+
+      // ✅ Reverse for ascending display
+      newDocs.reverse().forEach((doc, index) => {
+        const d = doc.data();
+        allData.unshift(doc);
+        body.insertAdjacentHTML("beforeend", createTableRow(doc, index + 1));
+
+        // ✅ Notify for each new doc
+        showSystemNotification("New Item", `${d.country || "Unknown"} — ${d.url || "No URL"}`);
+      });
+    }, err => {
       spinner.classList.add("hidden");
       showError(err.message);
     });
