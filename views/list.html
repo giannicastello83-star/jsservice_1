@@ -2,30 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Realtime Firestore Dashboard</title>
+<title>Interactive Firestore Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.js"></script>
 <style>
-  /* Row animations */
+  /* Animations */
   .slide-in { animation: slideIn 0.4s ease forwards; }
   .slide-out { animation: slideOut 0.4s ease forwards; }
   @keyframes slideIn { from {opacity:0; transform: translateY(-15px);} to {opacity:1; transform: translateY(0);} }
   @keyframes slideOut { from {opacity:1; transform: translateY(0);} to {opacity:0; transform: translateY(-15px);} }
 
-  /* Smooth counter animation */
   .counter { transition: all 0.5s ease; }
-
   ::-webkit-scrollbar { height:6px; width:6px; }
   ::-webkit-scrollbar-thumb { background-color: rgba(100,116,139,0.6); border-radius:9999px;}
   ::-webkit-scrollbar-track { background:transparent;}
 </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-inter flex flex-col items-center p-6">
+<body class="bg-gray-50 min-h-screen font-inter flex flex-col items-center p-6 transition-colors duration-500" id="body">
 
 <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-  <h1 class="text-3xl font-bold text-gray-800">Realtime Firestore Dashboard</h1>
-  <div id="errorMessage" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded shadow text-sm transition-all"></div>
+  <h1 class="text-3xl font-bold text-gray-800" id="title">Interactive Firestore Dashboard</h1>
+  <div class="flex gap-2 items-center">
+    <button id="toggleDark" class="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 transition">Toggle Dark</button>
+    <div id="errorMessage" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded shadow text-sm transition-all"></div>
+  </div>
 </header>
 
 <section class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -40,6 +41,10 @@
              onchange="updateLimit(this.value)"
              class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
     </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <input type="text" id="searchInput" placeholder="Search IP/URL/Country"
+           class="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
   </div>
 </section>
 
@@ -88,6 +93,7 @@ let LIMITNUMBER = 300;
 let unsubscribe = null;
 let db;
 let stats = { total:0, countries:new Set(), ips:new Set() };
+let allData = [];
 
 try {
   const firebaseConfig = {
@@ -114,7 +120,7 @@ function showError(msg){
 function createTableRow(doc, index){
   const data = doc.data();
   return `
-    <tr class="slide-in hover:bg-gray-50 transition" data-id="${doc.id}" data-url="${data.url||''}">
+    <tr class="slide-in hover:bg-gray-50 transition" data-id="${doc.id}" data-url="${data.url||''}" data-country="${data.country||''}" data-ip="${data.ip||''}">
       <td class="px-4 py-2">${index}</td>
       <td class="px-4 py-2">${data.timestamp||"N/A"}</td>
       <td class="px-4 py-2">${data.country||"N/A"}</td>
@@ -163,6 +169,22 @@ function toggleFilter(){
   btn.classList.toggle("bg-red-600");
 }
 
+function applySearch(){
+  const term = document.getElementById("searchInput").value.toLowerCase();
+  const body = document.getElementById("logsTableBody");
+  body.innerHTML="";
+  let idx=0;
+  allData.forEach(doc=>{
+    const d = doc.data();
+    if(d.ip?.toLowerCase().includes(term) || d.url?.toLowerCase().includes(term) || d.country?.toLowerCase().includes(term)){
+      idx++;
+      body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
+    }
+  });
+}
+
+document.getElementById("searchInput").addEventListener("input", applySearch);
+
 function initializeFirestoreListener(){
   const spinner=document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
@@ -173,38 +195,20 @@ function initializeFirestoreListener(){
     .onSnapshot(snapshot=>{
       spinner.classList.add("hidden");
       const body=document.getElementById("logsTableBody"); 
-      let index=0;
-
-      // Track new stats
+      allData = snapshot.docs; // store for search
+      body.innerHTML="";
       stats = { total:0, countries:new Set(), ips:new Set() };
+      let idx=0;
 
-      snapshot.docChanges().forEach(change=>{
-        const data = change.doc.data();
+      snapshot.forEach(doc=>{
+        const data = doc.data();
         if(data.country) stats.countries.add(data.country);
         if(data.ip) stats.ips.add(data.ip);
-
-        if(change.type==="added"){
-          index++;
-          const rowHTML = createTableRow(change.doc, index);
-          body.insertAdjacentHTML("afterbegin", rowHTML);
-        }
-        else if(change.type==="removed"){
-          const row = body.querySelector(`tr[data-id="${change.doc.id}"]`);
-          if(row){
-            row.classList.add("slide-out");
-            setTimeout(()=>row.remove(),400);
-          }
-        }
-        else if(change.type==="modified"){
-          const row = body.querySelector(`tr[data-id="${change.doc.id}"]`);
-          if(row){
-            const newRow = createTableRow(change.doc, index);
-            row.outerHTML=newRow;
-          }
-        }
+        stats.total++;
+        idx++;
+        body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
       });
 
-      stats.total = snapshot.size;
       animateCounter(document.getElementById("totalRequests"), stats.total);
       animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
       animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
@@ -215,6 +219,13 @@ function initializeFirestoreListener(){
 }
 
 initializeFirestoreListener();
+
+// Dark mode toggle
+document.getElementById("toggleDark").addEventListener("click", ()=>{
+  const bodyEl = document.getElementById("body");
+  bodyEl.classList.toggle("bg-gray-900");
+  bodyEl.classList.toggle("text-white");
+});
 </script>
 </body>
 </html>
