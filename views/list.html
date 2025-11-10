@@ -210,16 +210,16 @@ function initializeFirestoreListener(){
     .onSnapshot(snapshot=>{
       spinner.classList.add("hidden");
       const body=document.getElementById("logsTableBody");
-      snapshot.docChanges().forEach(change=>{
-        if(change.type==="added"){
-          const d=change.doc.data();
-          allData.unshift(change.doc);
-          body.insertAdjacentHTML("afterbegin", createTableRow(change.doc, 1));
+      snapshot.docChanges().forEach(change => {
+  if (change.type === "added") {
+    const d = change.doc.data();
+    allData.push(change.doc);
+    body.insertAdjacentHTML("beforeend", createTableRow(change.doc, allData.length));
 
-          // ✅ Show Chrome notification for each new document
-          showSystemNotification("New Item Is Added", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
-        }
-      });
+    // ✅ Show Chrome notification for each new document
+    showSystemNotification("New Item Is Added", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
+  }
+});
     },err=>{
       spinner.classList.add("hidden");
       showError(err.message);
