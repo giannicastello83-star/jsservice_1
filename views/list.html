@@ -57,24 +57,13 @@
   </div>
 </header>
 
-<!-- CONTROLS (THINNER) -->
+<!-- CONTROLS -->
 <section class="w-full max-w-7xl px-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-2 fade-slide">
   <div class="flex flex-wrap gap-2 items-center glass p-2 rounded-xl shadow-sm text-sm">
     <button id="toggleFilter" onclick="toggleFilter()"
       class="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-medium rounded-lg shadow transition">
       Hide All Entries
     </button>
-
-    <!-- <button id="toggleStats" onclick="toggleStats()"
-      class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-medium rounded-lg shadow transition">
-      Hide Stats
-    </button>
-
-    <button id="toggleCharts" onclick="toggleCharts()"
-      class="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium rounded-lg shadow transition">
-      Hide Charts
-    </button> -->
-
     <div class="flex items-center gap-1">
       <label for="limitInput" class="text-xs font-medium">Limit:</label>
       <input type="number" id="limitInput" min="1" max="999" value="300"
@@ -88,34 +77,6 @@
            class="w-full px-3 py-1.5 rounded-lg bg-transparent border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-cyan-500 outline-none placeholder-gray-400 text-sm">
   </div>
 </section>
-
-<!-- STATS (THINNER) -->
-<!-- <section id="statsSection" class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 fade-slide">
-  <div class="glass p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center text-sm">
-    <p class="text-xs text-gray-500 dark:text-gray-400">Total Requests</p>
-    <p id="totalRequests" class="text-2xl font-bold counter mt-1">0</p>
-  </div>
-  <div class="glass p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center text-sm">
-    <p class="text-xs text-gray-500 dark:text-gray-400">Unique Countries</p>
-    <p id="uniqueCountries" class="text-2xl font-bold counter mt-1">0</p>
-  </div>
-  <div class="glass p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center text-sm">
-    <p class="text-xs text-gray-500 dark:text-gray-400">Unique IPs</p>
-    <p id="uniqueIPs" class="text-2xl font-bold counter mt-1">0</p>
-  </div>
-</section> -->
-
-<!-- CHARTS (THINNER) -->
-<!-- <section id="chartsSection" class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 px-6 fade-slide transition-all duration-500">
-  <div class="glass p-4 rounded-xl shadow">
-    <h2 class="text-base font-semibold mb-2">Requests by Country</h2>
-    <canvas id="countryChart" height="180"></canvas>
-  </div>
-  <div class="glass p-4 rounded-xl shadow">
-    <h2 class="text-base font-semibold mb-2">Requests Over Time (Last 24h)</h2>
-    <canvas id="timeChart" height="180"></canvas>
-  </div>
-</section> -->
 
 <!-- MAIN TABLE -->
 <main class="w-full max-w-7xl mt-8 px-6 flex-1 flex flex-col fade-slide">
@@ -151,9 +112,14 @@
 let LIMITNUMBER = 300;
 let unsubscribe = null;
 let db;
-let stats = { total:0, countries:new Set(), ips:new Set() };
 let allData = [];
-let countryChart, timeChart;
+
+// ✅ Request Chrome Notification permission
+if ("Notification" in window) {
+  Notification.requestPermission().then((permission) => {
+    console.log("Notification permission:", permission);
+  });
+}
 
 try {
   const firebaseConfig = {
@@ -166,7 +132,21 @@ try {
   };
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
-} catch (err) { showError("Firebase init error: " + err.message); }
+} catch (err) {
+  showError("Firebase init error: " + err.message);
+}
+
+// 🔔 Show Chrome-style system notification
+function showSystemNotification(title, body) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    const notification = new Notification(title, {
+      body,
+      icon: "https://cdn-icons-png.flaticon.com/512/190/190411.png",
+    });
+    setTimeout(() => notification.close(), 5000);
+  }
+}
 
 function showError(msg){
   const e=document.getElementById("errorMessage");
@@ -190,15 +170,6 @@ function createTableRow(doc,index){
     </tr>`;
 }
 
-function animateCounter(el,newValue){
-  const current=parseInt(el.textContent)||0;
-  const diff=newValue-current;
-  if(diff===0) return;
-  const step=Math.ceil(Math.abs(diff)/20);
-  let count=current;
-  const interval=setInterval(()=>{count+=(diff>0? step:-step);if((diff>0&&count>=newValue)||(diff<0&&count<=newValue)){count=newValue;clearInterval(interval);}el.textContent=count;},20);
-}
-
 function updateLimit(value){
   const n=parseInt(value);
   if(n>0&&n<1000){
@@ -217,20 +188,6 @@ function toggleFilter(){
   btn.textContent=showingAll?"Show All Entries":"Hide All Entries";
 }
 
-function toggleStats(){
-  const section=document.getElementById("statsSection");
-  const btn=document.getElementById("toggleStats");
-  const isHidden=section.classList.toggle("hidden");
-  btn.textContent=isHidden?"Show Stats":"Hide Stats";
-}
-
-function toggleCharts(){
-  const section=document.getElementById("chartsSection");
-  const btn=document.getElementById("toggleCharts");
-  const isHidden=section.classList.toggle("hidden");
-  btn.textContent=isHidden?"Show Charts":"Hide Charts";
-}
-
 function applySearch(){
   const term=document.getElementById("searchInput").value.toLowerCase();
   const body=document.getElementById("logsTableBody");
@@ -244,55 +201,31 @@ function applySearch(){
 }
 document.getElementById("searchInput").addEventListener("input", applySearch);
 
-function initCharts(){
-  const ctx1=document.getElementById("countryChart");
-  const ctx2=document.getElementById("timeChart");
-  countryChart=new Chart(ctx1,{type:'bar',data:{labels:[],datasets:[{label:'Requests',data:[],backgroundColor:'rgba(6,182,212,0.7)',borderRadius:6}]},options:{scales:{y:{beginAtZero:true,ticks:{color:'#888'}},x:{ticks:{color:'#888'}}},plugins:{legend:{display:false}}}});
-  timeChart=new Chart(ctx2,{type:'line',data:{labels:[],datasets:[{label:'Requests',data:[],borderColor:'#06b6d4',tension:0.3,fill:false}]},options:{scales:{y:{beginAtZero:true,ticks:{color:'#888'}},x:{ticks:{color:'#888'}}},plugins:{legend:{display:false}}}});
-}
-
-function updateCharts(docs){
-  const countryCounts={},timeCounts={};
-  docs.forEach(doc=>{
-    const d=doc.data();
-    if(d.country) countryCounts[d.country]=(countryCounts[d.country]||0)+1;
-    if(d.timestamp){ const hour=d.timestamp.toString().slice(0,13); timeCounts[hour]=(timeCounts[hour]||0)+1; }
-  });
-  const topCountries=Object.entries(countryCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  countryChart.data.labels=topCountries.map(c=>c[0]);
-  countryChart.data.datasets[0].data=topCountries.map(c=>c[1]);
-  countryChart.update();
-  const sortedTimes=Object.entries(timeCounts).sort();
-  timeChart.data.labels=sortedTimes.map(t=>t[0]);
-  timeChart.data.datasets[0].data=sortedTimes.map(t=>t[1]);
-  timeChart.update();
-}
-
 function initializeFirestoreListener(){
   const spinner=document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
-  unsubscribe=db.collection("requests").orderBy("timestamp","desc").limit(LIMITNUMBER).onSnapshot(snapshot=>{
-    spinner.classList.add("hidden");
-    const body=document.getElementById("logsTableBody");
-    allData=snapshot.docs;
-    body.innerHTML="";
-    stats={total:0,countries:new Set(),ips:new Set()};
-    let idx=0;
-    snapshot.forEach(doc=>{
-      const d=doc.data();
-      if(d.country) stats.countries.add(d.country);
-      if(d.ip) stats.ips.add(d.ip);
-      stats.total++; idx++;
-      body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
+  unsubscribe=db.collection("requests")
+    .orderBy("timestamp","desc")
+    .limit(LIMITNUMBER)
+    .onSnapshot(snapshot=>{
+      spinner.classList.add("hidden");
+      const body=document.getElementById("logsTableBody");
+      snapshot.docChanges().forEach(change=>{
+        if(change.type==="added"){
+          const d=change.doc.data();
+          allData.unshift(change.doc);
+          body.insertAdjacentHTML("afterbegin", createTableRow(change.doc, 1));
+
+          // ✅ Show Chrome notification for each new document
+          showSystemNotification("New Firestore Entry", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
+        }
+      });
+    },err=>{
+      spinner.classList.add("hidden");
+      showError(err.message);
     });
-    // animateCounter(document.getElementById("totalRequests"), stats.total);
-    // animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
-    // animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
-    //updateCharts(snapshot.docs);
-  },err=>{spinner.classList.add("hidden");showError(err.message);});
 }
 
-//initCharts();
 initializeFirestoreListener();
 document.getElementById("toggleDark").addEventListener("click",()=>document.documentElement.classList.toggle("dark"));
 </script>
