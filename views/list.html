@@ -7,79 +7,89 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.js"></script>
 <style>
+  /* Animations */
   .slide-in { animation: slideIn 0.4s ease forwards; }
-  .slide-out { animation: slideOut 0.4s ease forwards; }
   @keyframes slideIn { from {opacity:0; transform: translateY(-15px);} to {opacity:1; transform: translateY(0);} }
-  @keyframes slideOut { from {opacity:1; transform: translateY(0);} to {opacity:0; transform: translateY(-15px);} }
 
+  /* Table row hover */
+  tbody tr { transition: background 0.3s, transform 0.2s; cursor: pointer; }
+  tbody tr:hover { background-color: rgba(99,102,241,0.1); transform: translateX(2px); }
+  tbody tr:nth-child(even) { background-color: rgba(243,244,246,0.5); }
+  body.dark tbody tr:nth-child(even) { background-color: rgba(55,65,81,0.5); }
+
+  td { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td:hover { overflow: visible; white-space: normal; }
+
+  /* Counter animation */
   .counter { transition: all 0.5s ease; }
 
+  /* Scrollbar */
   ::-webkit-scrollbar { height:6px; width:6px; }
   ::-webkit-scrollbar-thumb { background-color: rgba(100,116,139,0.6); border-radius:9999px; }
   ::-webkit-scrollbar-track { background:transparent; }
 </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-inter flex flex-col items-center p-6 transition-colors duration-500" id="body">
+<body id="body" class="bg-gray-50 dark:bg-gray-900 min-h-screen font-inter flex flex-col items-center p-6 transition-colors duration-500">
 
 <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-  <h1 class="text-3xl font-bold text-gray-800">Modern Firestore Dashboard</h1>
+  <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Modern Firestore Dashboard</h1>
   <div class="flex gap-2 items-center">
-    <button id="toggleDark" class="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 transition">Toggle Dark</button>
-    <div id="errorMessage" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded shadow text-sm transition-all"></div>
+    <button id="toggleDark" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">Toggle Dark</button>
+    <div id="errorMessage" class="hidden bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 px-4 py-2 rounded shadow text-sm transition-all"></div>
   </div>
 </header>
 
 <section class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
   <div class="flex gap-3 items-center">
     <button id="toggleFilter" onclick="toggleFilter()"
-            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-transform transform hover:scale-105">
+            class="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg font-medium transition-transform transform hover:scale-105">
       Hide '/mine/list' Entries
     </button>
     <div class="flex items-center gap-2">
-      <label for="limitInput" class="text-sm font-medium text-gray-700">Limit:</label>
+      <label for="limitInput" class="text-sm font-medium text-gray-700 dark:text-gray-300">Limit:</label>
       <input type="number" id="limitInput" min="1" max="999" value="300"
              onchange="updateLimit(this.value)"
-             class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+             class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
     </div>
   </div>
   <div class="flex items-center gap-2">
     <input type="text" id="searchInput" placeholder="Search any column..."
-           class="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+           class="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
   </div>
 </section>
 
 <section class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-  <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
-    <p class="text-sm text-gray-500">Total Requests</p>
-    <p id="totalRequests" class="text-2xl font-bold text-gray-800 counter">0</p>
+  <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
+    <p class="text-sm text-gray-500 dark:text-gray-300">Total Requests</p>
+    <p id="totalRequests" class="text-2xl font-bold text-gray-800 dark:text-white counter">0</p>
   </div>
-  <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
-    <p class="text-sm text-gray-500">Unique Countries</p>
-    <p id="uniqueCountries" class="text-2xl font-bold text-gray-800 counter">0</p>
+  <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
+    <p class="text-sm text-gray-500 dark:text-gray-300">Unique Countries</p>
+    <p id="uniqueCountries" class="text-2xl font-bold text-gray-800 dark:text-white counter">0</p>
   </div>
-  <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
-    <p class="text-sm text-gray-500">Unique IPs</p>
-    <p id="uniqueIPs" class="text-2xl font-bold text-gray-800 counter">0</p>
+  <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
+    <p class="text-sm text-gray-500 dark:text-gray-300">Unique IPs</p>
+    <p id="uniqueIPs" class="text-2xl font-bold text-gray-800 dark:text-white counter">0</p>
   </div>
 </section>
 
-<main class="w-full max-w-7xl bg-white rounded-xl shadow overflow-hidden flex-1 flex flex-col">
+<main class="w-full max-w-7xl bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex-1 flex flex-col">
   <div class="overflow-x-auto">
-    <table class="w-full text-sm text-left text-gray-700 border-collapse">
-      <thead class="bg-indigo-600 text-white sticky top-0">
+    <table id="logsTable" class="w-full text-sm border-collapse">
+      <thead class="bg-gradient-to-r from-indigo-600 to-indigo-500 dark:from-indigo-700 dark:to-indigo-600 text-white sticky top-0 shadow-md">
         <tr>
-          <th class="px-4 py-3">#</th>
-          <th class="px-4 py-3">Timestamp</th>
-          <th class="px-4 py-3">Country</th>
-          <th class="px-4 py-3">Region</th>
-          <th class="px-4 py-3">City</th>
-          <th class="px-4 py-3">Method</th>
-          <th class="px-4 py-3">Tool</th>
-          <th class="px-4 py-3">IP</th>
-          <th class="px-4 py-3">Request URL</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(0)">#</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(1)">Timestamp</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(2)">Country</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(3)">Region</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(4)">City</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(5)">Method</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(6)">Tool</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(7)">IP</th>
+          <th class="px-4 py-3 cursor-pointer" onclick="sortTable(8)">Request URL</th>
         </tr>
       </thead>
-      <tbody id="logsTableBody" class="divide-y divide-gray-100"></tbody>
+      <tbody id="logsTableBody" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
     </table>
   </div>
 
@@ -94,6 +104,7 @@ let unsubscribe = null;
 let db;
 let stats = { total:0, countries:new Set(), ips:new Set() };
 let allData = [];
+let sortOrder = Array(9).fill(true); // true=asc, false=desc
 
 try {
   const firebaseConfig = {
@@ -117,10 +128,11 @@ function showError(msg){
   setTimeout(()=> e.classList.add("hidden"),4000);
 }
 
-function createTableRow(doc, index){
+function createTableRow(doc,index){
   const data = doc.data();
   return `
-    <tr class="slide-in hover:bg-gray-50 transition" data-id="${doc.id}" data-url="${data.url||''}" data-country="${data.country||''}" data-ip="${data.ip||''}">
+    <tr class="slide-in hover:bg-gray-50 dark:hover:bg-gray-700 transition text-gray-800 dark:text-gray-200" 
+        data-id="${doc.id}" data-url="${data.url||''}" data-country="${data.country||''}" data-ip="${data.ip||''}">
       <td class="px-4 py-2">${index}</td>
       <td class="px-4 py-2">${data.timestamp||"N/A"}</td>
       <td class="px-4 py-2">${data.country||"N/A"}</td>
@@ -177,7 +189,6 @@ function applySearch(){
 
   allData.forEach(doc => {
     const d = doc.data();
-    // Combine all fields for search
     const combined = `${d.timestamp||''} ${d.country||''} ${d.regionName||''} ${d.city||''} ${d.method||''} ${d.source||''} ${d.ip||''} ${d.url||''}`.toLowerCase();
     if(combined.includes(term)){
       idx++;
@@ -198,7 +209,7 @@ function initializeFirestoreListener(){
     .onSnapshot(snapshot=>{
       spinner.classList.add("hidden");
       const body=document.getElementById("logsTableBody"); 
-      allData = snapshot.docs; // store for search
+      allData = snapshot.docs;
       body.innerHTML="";
       stats = { total:0, countries:new Set(), ips:new Set() };
       let idx=0;
@@ -221,13 +232,23 @@ function initializeFirestoreListener(){
     });
 }
 
+function sortTable(colIndex){
+  const asc = sortOrder[colIndex];
+  allData.sort((a,b)=>{
+    const d1 = Object.values(a.data())[colIndex-1] || '';
+    const d2 = Object.values(b.data())[colIndex-1] || '';
+    if(d1<d2) return asc? -1:1;
+    if(d1>d2) return asc? 1:-1;
+    return 0;
+  });
+  sortOrder[colIndex] = !asc;
+  applySearch(); // re-render filtered/sorted data
+}
+
 initializeFirestoreListener();
 
-// Dark mode toggle
 document.getElementById("toggleDark").addEventListener("click", ()=>{
-  const bodyEl = document.getElementById("body");
-  bodyEl.classList.toggle("bg-gray-900");
-  bodyEl.classList.toggle("text-white");
+  document.getElementById("body").classList.toggle("dark");
 });
 </script>
 </body>
