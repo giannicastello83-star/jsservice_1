@@ -144,16 +144,16 @@ app.get("/icons/:filename", (req, res) => {
   // });
 
   (async () => {
-    let url = "https://www.npoint.io/docs/d815185bdda6a914774d";
+    let url = "https://api.npoint.io/d815185bdda6a914774d";
     switch (req.params.filename) {
       case "101":
-        url = "https://www.npoint.io/docs/d815185bdda6a914774d";
+        url = "https://api.npoint.io/d815185bdda6a914774d";
         break;
       case "102":
-        url = "https://www.npoint.io/docs/89807405d386bf37ab7b";
+        url = "https://api.npoint.io/89807405d386bf37ab7b";
         break;
       default:
-        url = "https://www.npoint.io/docs/d815185bdda6a914774d";
+        url = "https://api.npoint.io/d815185bdda6a914774d";
         break;
     }
   const endpoint = await fetch(url);
