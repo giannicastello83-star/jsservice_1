@@ -201,34 +201,29 @@ function applySearch(){
 }
 document.getElementById("searchInput").addEventListener("input", applySearch);
 
-// ✅ FIXED FIRESTORE LISTENER
+// ✅ FINAL FIRESTORE LISTENER (DESCENDING DISPLAY)
 function initializeFirestoreListener() {
   const spinner = document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
 
   unsubscribe = db.collection("requests")
-    .orderBy("timestamp", "desc") // ✅ Desc for realtime updates
+    .orderBy("timestamp", "desc") // ✅ Newest first
     .limit(LIMITNUMBER)
     .onSnapshot(snapshot => {
       spinner.classList.add("hidden");
       const body = document.getElementById("logsTableBody");
 
-      // Collect docs (arrive desc)
-      let newDocs = [];
       snapshot.docChanges().forEach(change => {
         if (change.type === "added") {
-          newDocs.push(change.doc);
+          const d = change.doc.data();
+          allData.unshift(change.doc);
+
+          // ✅ Insert newest entries at top
+          body.insertAdjacentHTML("afterbegin", createTableRow(change.doc, 1));
+
+          // ✅ Notify on each new document
+          showSystemNotification("New Item", `${d.country || "Unknown"} — ${d.url || "No URL"}`);
         }
-      });
-
-      // ✅ Reverse for ascending display
-      newDocs.reverse().forEach((doc, index) => {
-        const d = doc.data();
-        allData.unshift(doc);
-        body.insertAdjacentHTML("beforeend", createTableRow(doc, index + 1));
-
-        // ✅ Notify for each new doc
-        showSystemNotification("New Item", `${d.country || "Unknown"} — ${d.url || "No URL"}`);
       });
     }, err => {
       spinner.classList.add("hidden");
