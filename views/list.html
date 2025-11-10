@@ -2,27 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Interactive Firestore Dashboard</title>
+<title>Modern Firestore Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.js"></script>
 <style>
-  /* Animations */
   .slide-in { animation: slideIn 0.4s ease forwards; }
   .slide-out { animation: slideOut 0.4s ease forwards; }
   @keyframes slideIn { from {opacity:0; transform: translateY(-15px);} to {opacity:1; transform: translateY(0);} }
   @keyframes slideOut { from {opacity:1; transform: translateY(0);} to {opacity:0; transform: translateY(-15px);} }
 
   .counter { transition: all 0.5s ease; }
+
   ::-webkit-scrollbar { height:6px; width:6px; }
-  ::-webkit-scrollbar-thumb { background-color: rgba(100,116,139,0.6); border-radius:9999px;}
-  ::-webkit-scrollbar-track { background:transparent;}
+  ::-webkit-scrollbar-thumb { background-color: rgba(100,116,139,0.6); border-radius:9999px; }
+  ::-webkit-scrollbar-track { background:transparent; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen font-inter flex flex-col items-center p-6 transition-colors duration-500" id="body">
 
 <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-  <h1 class="text-3xl font-bold text-gray-800" id="title">Interactive Firestore Dashboard</h1>
+  <h1 class="text-3xl font-bold text-gray-800">Modern Firestore Dashboard</h1>
   <div class="flex gap-2 items-center">
     <button id="toggleDark" class="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 transition">Toggle Dark</button>
     <div id="errorMessage" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded shadow text-sm transition-all"></div>
@@ -43,7 +43,7 @@
     </div>
   </div>
   <div class="flex items-center gap-2">
-    <input type="text" id="searchInput" placeholder="Search IP/URL/Country"
+    <input type="text" id="searchInput" placeholder="Search any column..."
            class="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
   </div>
 </section>
@@ -172,11 +172,14 @@ function toggleFilter(){
 function applySearch(){
   const term = document.getElementById("searchInput").value.toLowerCase();
   const body = document.getElementById("logsTableBody");
-  body.innerHTML="";
-  let idx=0;
-  allData.forEach(doc=>{
+  body.innerHTML = "";
+  let idx = 0;
+
+  allData.forEach(doc => {
     const d = doc.data();
-    if(d.ip?.toLowerCase().includes(term) || d.url?.toLowerCase().includes(term) || d.country?.toLowerCase().includes(term)){
+    // Combine all fields for search
+    const combined = `${d.timestamp||''} ${d.country||''} ${d.regionName||''} ${d.city||''} ${d.method||''} ${d.source||''} ${d.ip||''} ${d.url||''}`.toLowerCase();
+    if(combined.includes(term)){
       idx++;
       body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
     }
