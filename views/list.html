@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Firestore Analytics Dashboard</title>
+<title>2Team Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -59,11 +59,19 @@
 
 <!-- CONTROLS -->
 <section class="w-full max-w-7xl px-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 fade-slide">
-  <div class="flex gap-3 items-center glass p-3 rounded-xl shadow-sm">
+  <div class="flex flex-wrap gap-3 items-center glass p-3 rounded-xl shadow-sm">
     <button id="toggleFilter" onclick="toggleFilter()"
       class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-medium rounded-lg shadow transition">
       Hide All Entries
     </button>
+
+    <!-- ✅ NEW Show/Hide Charts Button -->
+    <button id="toggleCharts"
+      onclick="toggleCharts()"
+      class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium rounded-lg shadow transition">
+      Hide Charts
+    </button>
+
     <div class="flex items-center gap-2">
       <label for="limitInput" class="text-sm font-medium">Limit:</label>
       <input type="number" id="limitInput" min="1" max="999" value="300"
@@ -71,6 +79,7 @@
              class="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-slate-800">
     </div>
   </div>
+
   <div class="md:col-span-2 glass p-3 rounded-xl shadow-sm flex items-center">
     <input type="text" id="searchInput" placeholder="🔍 Search any field..."
            class="w-full px-4 py-2 rounded-lg bg-transparent border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-cyan-500 outline-none placeholder-gray-400">
@@ -93,8 +102,8 @@
   </div>
 </section>
 
-<!-- CHARTS -->
-<section class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-6 mt-10 px-6 fade-slide">
+<!-- ✅ CHARTS WRAPPER WITH TOGGLE -->
+<section id="chartsSection" class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-6 mt-10 px-6 fade-slide transition-all duration-500">
   <div class="glass p-6 rounded-2xl shadow">
     <h2 class="text-lg font-semibold mb-3">Requests by Country</h2>
     <canvas id="countryChart" height="200"></canvas>
@@ -141,7 +150,6 @@ let unsubscribe = null;
 let db;
 let stats = { total:0, countries:new Set(), ips:new Set() };
 let allData = [];
-
 let countryChart, timeChart;
 
 try {
@@ -210,6 +218,14 @@ function toggleFilter(){
   btn.textContent=showingAll?"Show All Entries":"Hide All Entries";
 }
 
+// ✅ NEW FUNCTION: Toggle Charts Visibility
+function toggleCharts(){
+  const section=document.getElementById("chartsSection");
+  const btn=document.getElementById("toggleCharts");
+  const isHidden=section.classList.toggle("hidden");
+  btn.textContent=isHidden?"Show Charts":"Hide Charts";
+}
+
 function applySearch(){
   const term=document.getElementById("searchInput").value.toLowerCase();
   const body=document.getElementById("logsTableBody");
@@ -225,42 +241,24 @@ function applySearch(){
 }
 document.getElementById("searchInput").addEventListener("input", applySearch);
 
-// Chart.js setup
 function initCharts(){
   const ctx1=document.getElementById("countryChart");
   const ctx2=document.getElementById("timeChart");
-
-  countryChart=new Chart(ctx1,{
-    type:'bar',
-    data:{labels:[],datasets:[{label:'Requests',data:[],backgroundColor:'rgba(6,182,212,0.7)',borderRadius:6}]},
-    options:{scales:{y:{beginAtZero:true,ticks:{color:'#888'}},x:{ticks:{color:'#888'}}},plugins:{legend:{display:false}}}
-  });
-
-  timeChart=new Chart(ctx2,{
-    type:'line',
-    data:{labels:[],datasets:[{label:'Requests',data:[],borderColor:'#06b6d4',tension:0.3,fill:false}]},
-    options:{scales:{y:{beginAtZero:true,ticks:{color:'#888'}},x:{ticks:{color:'#888'}}},plugins:{legend:{display:false}}}
-  });
+  countryChart=new Chart(ctx1,{type:'bar',data:{labels:[],datasets:[{label:'Requests',data:[],backgroundColor:'rgba(6,182,212,0.7)',borderRadius:6}]},options:{scales:{y:{beginAtZero:true,ticks:{color:'#888'}},x:{ticks:{color:'#888'}}},plugins:{legend:{display:false}}}});
+  timeChart=new Chart(ctx2,{type:'line',data:{labels:[],datasets:[{label:'Requests',data:[],borderColor:'#06b6d4',tension:0.3,fill:false}]},options:{scales:{y:{beginAtZero:true,ticks:{color:'#888'}},x:{ticks:{color:'#888'}}},plugins:{legend:{display:false}}}});
 }
 
 function updateCharts(docs){
-  const countryCounts={};
-  const timeCounts={};
-
+  const countryCounts={},timeCounts={};
   docs.forEach(doc=>{
     const d=doc.data();
     if(d.country) countryCounts[d.country]=(countryCounts[d.country]||0)+1;
-    if(d.timestamp){
-      const hour=d.timestamp.toString().slice(0,13);
-      timeCounts[hour]=(timeCounts[hour]||0)+1;
-    }
+    if(d.timestamp){ const hour=d.timestamp.toString().slice(0,13); timeCounts[hour]=(timeCounts[hour]||0)+1; }
   });
-
   const topCountries=Object.entries(countryCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
   countryChart.data.labels=topCountries.map(c=>c[0]);
   countryChart.data.datasets[0].data=topCountries.map(c=>c[1]);
   countryChart.update();
-
   const sortedTimes=Object.entries(timeCounts).sort();
   timeChart.data.labels=sortedTimes.map(t=>t[0]);
   timeChart.data.datasets[0].data=sortedTimes.map(t=>t[1]);
@@ -270,33 +268,25 @@ function updateCharts(docs){
 function initializeFirestoreListener(){
   const spinner=document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
-
-  unsubscribe=db.collection("requests")
-    .orderBy("timestamp","desc")
-    .limit(LIMITNUMBER)
-    .onSnapshot(snapshot=>{
-      spinner.classList.add("hidden");
-      const body=document.getElementById("logsTableBody");
-      allData=snapshot.docs;
-      body.innerHTML="";
-      stats={total:0,countries:new Set(),ips:new Set()};
-      let idx=0;
-      snapshot.forEach(doc=>{
-        const d=doc.data();
-        if(d.country) stats.countries.add(d.country);
-        if(d.ip) stats.ips.add(d.ip);
-        stats.total++;
-        idx++;
-        body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
-      });
-      animateCounter(document.getElementById("totalRequests"), stats.total);
-      animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
-      animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
-      updateCharts(snapshot.docs);
-    },err=>{
-      spinner.classList.add("hidden");
-      showError(err.message);
+  unsubscribe=db.collection("requests").orderBy("timestamp","desc").limit(LIMITNUMBER).onSnapshot(snapshot=>{
+    spinner.classList.add("hidden");
+    const body=document.getElementById("logsTableBody");
+    allData=snapshot.docs;
+    body.innerHTML="";
+    stats={total:0,countries:new Set(),ips:new Set()};
+    let idx=0;
+    snapshot.forEach(doc=>{
+      const d=doc.data();
+      if(d.country) stats.countries.add(d.country);
+      if(d.ip) stats.ips.add(d.ip);
+      stats.total++; idx++;
+      body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
     });
+    animateCounter(document.getElementById("totalRequests"), stats.total);
+    animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
+    animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
+    updateCharts(snapshot.docs);
+  },err=>{spinner.classList.add("hidden");showError(err.message);});
 }
 
 initCharts();
