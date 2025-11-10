@@ -2,27 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Firestore Logs Dashboard</title>
+<title>Realtime Firestore Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.js"></script>
 <style>
-  /* Animations for table rows */
-  .fade-in {
-    animation: fadeIn 0.5s ease forwards;
-  }
-  .fade-out {
-    animation: fadeOut 0.5s ease forwards;
-  }
-  @keyframes fadeIn {
-    from {opacity:0; transform: translateY(-10px);}
-    to {opacity:1; transform: translateY(0);}
-  }
-  @keyframes fadeOut {
-    from {opacity:1; transform: translateY(0);}
-    to {opacity:0; transform: translateY(-10px);}
-  }
-  /* Scrollbar for table */
+  /* Row animations */
+  .slide-in { animation: slideIn 0.4s ease forwards; }
+  .slide-out { animation: slideOut 0.4s ease forwards; }
+  @keyframes slideIn { from {opacity:0; transform: translateY(-15px);} to {opacity:1; transform: translateY(0);} }
+  @keyframes slideOut { from {opacity:1; transform: translateY(0);} to {opacity:0; transform: translateY(-15px);} }
+
+  /* Smooth counter animation */
+  .counter { transition: all 0.5s ease; }
+
   ::-webkit-scrollbar { height:6px; width:6px; }
   ::-webkit-scrollbar-thumb { background-color: rgba(100,116,139,0.6); border-radius:9999px;}
   ::-webkit-scrollbar-track { background:transparent;}
@@ -31,7 +24,7 @@
 <body class="bg-gray-50 min-h-screen font-inter flex flex-col items-center p-6">
 
 <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-  <h1 class="text-3xl font-bold text-gray-800">Firestore Logs Dashboard</h1>
+  <h1 class="text-3xl font-bold text-gray-800">Realtime Firestore Dashboard</h1>
   <div id="errorMessage" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded shadow text-sm transition-all"></div>
 </header>
 
@@ -48,29 +41,20 @@
              class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
     </div>
   </div>
-
-  <div class="flex justify-start md:justify-end gap-2 items-center flex-wrap">
-    <button onclick="changePage('first')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">⏮</button>
-    <button onclick="changePage('prev')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">◀</button>
-    <span id="pageIndicator" class="px-3 py-2 bg-gray-100 rounded-lg font-medium transition">1</span>
-    <button onclick="changePage('next')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">▶</button>
-    <button onclick="changePage('last')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">⏭</button>
-  </div>
 </section>
 
-<!-- STATS CARDS -->
 <section class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
   <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
     <p class="text-sm text-gray-500">Total Requests</p>
-    <p id="totalRequests" class="text-2xl font-bold text-gray-800">0</p>
+    <p id="totalRequests" class="text-2xl font-bold text-gray-800 counter">0</p>
   </div>
   <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
     <p class="text-sm text-gray-500">Unique Countries</p>
-    <p id="uniqueCountries" class="text-2xl font-bold text-gray-800">0</p>
+    <p id="uniqueCountries" class="text-2xl font-bold text-gray-800 counter">0</p>
   </div>
   <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
     <p class="text-sm text-gray-500">Unique IPs</p>
-    <p id="uniqueIPs" class="text-2xl font-bold text-gray-800">0</p>
+    <p id="uniqueIPs" class="text-2xl font-bold text-gray-800 counter">0</p>
   </div>
 </section>
 
@@ -105,7 +89,6 @@ let unsubscribe = null;
 let db;
 let stats = { total:0, countries:new Set(), ips:new Set() };
 
-// Initialize Firebase
 try {
   const firebaseConfig = {
     apiKey: "AIzaSyApaZD_ekJMAsWE8vvIJ3ie9l6m44_UomA",
@@ -131,7 +114,7 @@ function showError(msg){
 function createTableRow(doc, index){
   const data = doc.data();
   return `
-    <tr class="fade-in hover:bg-gray-50 transition" data-id="${doc.id}">
+    <tr class="slide-in hover:bg-gray-50 transition" data-id="${doc.id}" data-url="${data.url||''}">
       <td class="px-4 py-2">${index}</td>
       <td class="px-4 py-2">${data.timestamp||"N/A"}</td>
       <td class="px-4 py-2">${data.country||"N/A"}</td>
@@ -143,6 +126,21 @@ function createTableRow(doc, index){
       <td class="px-4 py-2 truncate max-w-[250px]" title="${data.url}">${data.url||"N/A"}</td>
     </tr>
   `;
+}
+
+function animateCounter(element, newValue){
+  const current = parseInt(element.textContent)||0;
+  const diff = newValue - current;
+  if(diff===0) return;
+  const step = Math.ceil(Math.abs(diff)/20);
+  let count = current;
+  const interval = setInterval(()=>{
+    count += (diff>0? step : -step);
+    if((diff>0 && count>=newValue) || (diff<0 && count<=newValue)){
+      count=newValue; clearInterval(interval);
+    }
+    element.textContent = count;
+  },20);
 }
 
 function updateLimit(value){
@@ -168,29 +166,50 @@ function toggleFilter(){
 function initializeFirestoreListener(){
   const spinner=document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
-  
+
   unsubscribe=db.collection("requests")
     .orderBy("timestamp","desc")
     .limit(LIMITNUMBER)
     .onSnapshot(snapshot=>{
       spinner.classList.add("hidden");
       const body=document.getElementById("logsTableBody"); 
-      body.innerHTML="";
+      let index=0;
+
+      // Track new stats
       stats = { total:0, countries:new Set(), ips:new Set() };
-      let idx=0;
-      snapshot.forEach(doc=>{
-        idx++;
-        const data = doc.data();
+
+      snapshot.docChanges().forEach(change=>{
+        const data = change.doc.data();
         if(data.country) stats.countries.add(data.country);
         if(data.ip) stats.ips.add(data.ip);
-        stats.total++;
-        body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
+
+        if(change.type==="added"){
+          index++;
+          const rowHTML = createTableRow(change.doc, index);
+          body.insertAdjacentHTML("afterbegin", rowHTML);
+        }
+        else if(change.type==="removed"){
+          const row = body.querySelector(`tr[data-id="${change.doc.id}"]`);
+          if(row){
+            row.classList.add("slide-out");
+            setTimeout(()=>row.remove(),400);
+          }
+        }
+        else if(change.type==="modified"){
+          const row = body.querySelector(`tr[data-id="${change.doc.id}"]`);
+          if(row){
+            const newRow = createTableRow(change.doc, index);
+            row.outerHTML=newRow;
+          }
+        }
       });
-      document.getElementById("totalRequests").textContent = stats.total;
-      document.getElementById("uniqueCountries").textContent = stats.countries.size;
-      document.getElementById("uniqueIPs").textContent = stats.ips.size;
+
+      stats.total = snapshot.size;
+      animateCounter(document.getElementById("totalRequests"), stats.total);
+      animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
+      animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
     }, error=>{
-      spinner.classList.add("hidden"); 
+      spinner.classList.add("hidden");
       showError(error.message);
     });
 }
