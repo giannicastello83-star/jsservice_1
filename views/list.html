@@ -201,31 +201,26 @@ function applySearch(){
 }
 document.getElementById("searchInput").addEventListener("input", applySearch);
 
-// ✅ FINAL FIRESTORE LISTENER (DESCENDING DISPLAY)
-function initializeFirestoreListener() {
-  const spinner = document.getElementById("loadingSpinner");
+function initializeFirestoreListener(){
+  const spinner=document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
-
-  unsubscribe = db.collection("requests")
-    .orderBy("timestamp", "desc") // ✅ Newest first
+  unsubscribe=db.collection("requests")
+    .orderBy("timestamp","asc")
     .limit(LIMITNUMBER)
-    .onSnapshot(snapshot => {
+    .onSnapshot(snapshot=>{
       spinner.classList.add("hidden");
-      const body = document.getElementById("logsTableBody");
-
-      snapshot.docChanges().forEach(change => {
-        if (change.type === "added") {
-          const d = change.doc.data();
+      const body=document.getElementById("logsTableBody");
+      snapshot.docChanges().forEach(change=>{
+        if(change.type==="added"){
+          const d=change.doc.data();
           allData.unshift(change.doc);
-
-          // ✅ Insert newest entries at top
           body.insertAdjacentHTML("afterbegin", createTableRow(change.doc, 1));
 
-          // ✅ Notify on each new document
-          showSystemNotification("New Item", `${d.country || "Unknown"} — ${d.url || "No URL"}`);
+          // ✅ Show Chrome notification for each new document
+          showSystemNotification("New Item", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
         }
       });
-    }, err => {
+    },err=>{
       spinner.classList.add("hidden");
       showError(err.message);
     });
