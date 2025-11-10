@@ -1,186 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Firestore Logs Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.js"></script>
-  <style>
-    /* Scrollbar styling for table */
-    ::-webkit-scrollbar {
-      height: 6px;
-      width: 6px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background-color: rgba(100, 116, 139, 0.6);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Firestore Logs Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.js"></script>
+<style>
+  /* Animations for table rows */
+  .fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  @keyframes fadeIn {
+    from {opacity:0; transform: translateY(-10px);}
+    to {opacity:1; transform: translateY(0);}
+  }
+
+  /* Scrollbar for table */
+  ::-webkit-scrollbar { height:6px; width:6px; }
+  ::-webkit-scrollbar-thumb { background-color: rgba(100,116,139,0.6); border-radius:9999px;}
+  ::-webkit-scrollbar-track { background:transparent;}
+</style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center p-6 font-sans">
+<body class="bg-gray-50 min-h-screen font-inter flex flex-col items-center p-6">
 
-  <!-- HEADER -->
-  <header class="w-full max-w-7xl flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-gray-800">Firestore Logs Dashboard</h1>
-    <div id="errorMessage" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded shadow text-sm"></div>
-  </header>
+<!-- HEADER -->
+<header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+  <h1 class="text-3xl font-bold text-gray-800">Firestore Logs Dashboard</h1>
+  <div id="errorMessage" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded shadow text-sm transition-all"></div>
+</header>
 
-  <!-- FILTER & CONTROLS -->
-  <section class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-    <div class="flex gap-3 items-center">
-      <button id="toggleFilter" onclick="toggleFilter()"
-              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition">
-        Hide '/mine/list' Entries
-      </button>
-
-      <div class="flex items-center gap-2">
-        <label for="limitInput" class="text-sm font-medium text-gray-700">Limit:</label>
-        <input type="number" id="limitInput" min="1" max="999" value="300"
-               onchange="updateLimit(this.value)"
-               class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      </div>
+<!-- CONTROLS -->
+<section class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="flex gap-3 items-center">
+    <button id="toggleFilter" onclick="toggleFilter()"
+            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-transform transform hover:scale-105">
+      Hide '/mine/list' Entries
+    </button>
+    <div class="flex items-center gap-2">
+      <label for="limitInput" class="text-sm font-medium text-gray-700">Limit:</label>
+      <input type="number" id="limitInput" min="1" max="999" value="300"
+             onchange="updateLimit(this.value)"
+             class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
     </div>
+  </div>
 
-    <div class="flex justify-start md:justify-end gap-2 items-center flex-wrap">
-      <button onclick="changePage('first')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">⏮</button>
-      <button onclick="changePage('prev')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">◀</button>
-      <span id="pageIndicator" class="px-3 py-2 bg-gray-100 rounded-lg font-medium">1</span>
-      <button onclick="changePage('next')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">▶</button>
-      <button onclick="changePage('last')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">⏭</button>
-    </div>
-  </section>
+  <div class="flex justify-start md:justify-end gap-2 items-center flex-wrap">
+    <button onclick="changePage('first')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">⏮</button>
+    <button onclick="changePage('prev')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">◀</button>
+    <span id="pageIndicator" class="px-3 py-2 bg-gray-100 rounded-lg font-medium transition">1</span>
+    <button onclick="changePage('next')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">▶</button>
+    <button onclick="changePage('last')" class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">⏭</button>
+  </div>
+</section>
 
-  <!-- TABLE CARD -->
-  <main class="w-full max-w-7xl bg-white rounded-xl shadow overflow-hidden flex-1 flex flex-col">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-700 border-collapse">
-        <thead class="bg-indigo-600 text-white sticky top-0">
-          <tr>
-            <th class="px-4 py-3">#</th>
-            <th class="px-4 py-3">Timestamp</th>
-            <th class="px-4 py-3">Country</th>
-            <th class="px-4 py-3">Region</th>
-            <th class="px-4 py-3">City</th>
-            <th class="px-4 py-3">Method</th>
-            <th class="px-4 py-3">Tool</th>
-            <th class="px-4 py-3">IP</th>
-            <th class="px-4 py-3">Request URL</th>
-          </tr>
-        </thead>
-        <tbody id="logsTableBody" class="divide-y divide-gray-100"></tbody>
-      </table>
-    </div>
+<!-- STATS CARDS -->
+<section class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
+    <p class="text-sm text-gray-500">Total Requests</p>
+    <p id="totalRequests" class="text-2xl font-bold text-gray-800">0</p>
+  </div>
+  <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
+    <p class="text-sm text-gray-500">Unique Countries</p>
+    <p id="uniqueCountries" class="text-2xl font-bold text-gray-800">0</p>
+  </div>
+  <div class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
+    <p class="text-sm text-gray-500">Unique IPs</p>
+    <p id="uniqueIPs" class="text-2xl font-bold text-gray-800">0</p>
+  </div>
+</section>
 
-    <!-- LOADING SPINNER -->
-    <div id="loadingSpinner" class="hidden flex justify-center items-center py-6">
-      <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-    </div>
-  </main>
-
-  <script>
-    let LIMITNUMBER = 300;
-    let unsubscribe = null;
-    let currentPage = 1;
-    let lastKnownDoc = null;
-    let firstVisibleDoc = null;
-    let totalDocuments = 0;
-    let db;
-
-    // Initialize Firebase
-    try {
-      const firebaseConfig = {
-        apiKey: "AIzaSyApaZD_ekJMAsWE8vvIJ3ie9l6m44_UomA",
-        authDomain: "jsservice-data2.firebaseapp.com",
-        projectId: "jsservice-data2",
-        storageBucket: "jsservice-data2.firebasestorage.app",
-        messagingSenderId: "1033348246763",
-        appId: "1:1033348246763:web:817401b9ac969b323ba2ae",
-        measurementId: "G-VKYK1QTZ81",
-      };
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-      console.log("Firebase initialized successfully");
-    } catch (err) {
-      showError("Firebase initialization failed: " + err.message);
-    }
-
-    function showError(message) {
-      const errorDiv = document.getElementById("errorMessage");
-      errorDiv.textContent = message;
-      errorDiv.classList.remove("hidden");
-      setTimeout(() => errorDiv.classList.add("hidden"), 4000);
-    }
-
-    function createTableRow(doc, index) {
-      const data = doc.data();
-      const isFilteredOut = data.url === "/mine/list";
-      const rowClass = isFilteredOut ? "hidden" : "";
-      return `
-        <tr class="${rowClass} hover:bg-gray-50 transition" data-url="${data.url}" data-id="${doc.id}">
-          <td class="px-4 py-2">${index}</td>
-          <td class="px-4 py-2">${data.timestamp || "N/A"}</td>
-          <td class="px-4 py-2">${data.country || "N/A"}</td>
-          <td class="px-4 py-2">${data.regionName || "N/A"}</td>
-          <td class="px-4 py-2">${data.city || "N/A"}</td>
-          <td class="px-4 py-2">${data.method || "N/A"}</td>
-          <td class="px-4 py-2">${data.source || "N/A"}</td>
-          <td class="px-4 py-2">${data.ip || "N/A"}</td>
-          <td class="px-4 py-2 truncate max-w-[250px]" title="${data.url}">${data.url || "N/A"}</td>
+<!-- TABLE -->
+<main class="w-full max-w-7xl bg-white rounded-xl shadow overflow-hidden flex-1 flex flex-col">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm text-left text-gray-700 border-collapse">
+      <thead class="bg-indigo-600 text-white sticky top-0">
+        <tr>
+          <th class="px-4 py-3">#</th>
+          <th class="px-4 py-3">Timestamp</th>
+          <th class="px-4 py-3">Country</th>
+          <th class="px-4 py-3">Region</th>
+          <th class="px-4 py-3">City</th>
+          <th class="px-4 py-3">Method</th>
+          <th class="px-4 py-3">Tool</th>
+          <th class="px-4 py-3">IP</th>
+          <th class="px-4 py-3">Request URL</th>
         </tr>
-      `;
-    }
+      </thead>
+      <tbody id="logsTableBody" class="divide-y divide-gray-100"></tbody>
+    </table>
+  </div>
 
-    function updateLimit(value) {
-      const newLimit = parseInt(value);
-      if (newLimit > 0 && newLimit < 1000) {
-        LIMITNUMBER = newLimit;
-        if (unsubscribe) unsubscribe();
-        document.getElementById("logsTableBody").innerHTML = "";
-        initializeFirestoreListener();
-      }
-    }
+  <!-- LOADING SPINNER -->
+  <div id="loadingSpinner" class="hidden flex justify-center items-center py-6">
+    <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+</main>
 
-    function initializeFirestoreListener() {
-      const spinner = document.getElementById("loadingSpinner");
-      spinner.classList.remove("hidden");
+<script>
+  let LIMITNUMBER = 300;
+  let unsubscribe = null;
+  let db;
 
-      unsubscribe = db
-        .collection("requests")
-        .orderBy("timestamp", "desc")
-        .limit(LIMITNUMBER)
-        .onSnapshot(
-          snapshot => {
-            spinner.classList.add("hidden");
-            const tableBody = document.getElementById("logsTableBody");
-            tableBody.innerHTML = "";
-            let index = 0;
-            snapshot.forEach(doc => {
-              index++;
-              tableBody.insertAdjacentHTML("beforeend", createTableRow(doc, index));
-            });
-          },
-          error => {
-            spinner.classList.add("hidden");
-            showError("Error loading data: " + error.message);
-          }
-        );
-    }
+  try {
+    const firebaseConfig = {
+      apiKey: "AIzaSyApaZD_ekJMAsWE8vvIJ3ie9l6m44_UomA",
+      authDomain: "jsservice-data2.firebaseapp.com",
+      projectId: "jsservice-data2",
+      storageBucket: "jsservice-data2.firebasestorage.app",
+      messagingSenderId: "1033348246763",
+      appId: "1:1033348246763:web:817401b9ac969b323ba2ae",
+    };
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  } catch (err) {
+    showError("Firebase init error: " + err.message);
+  }
 
-    function toggleFilter() {
-      const btn = document.getElementById("toggleFilter");
-      const rows = document.querySelectorAll("tr[data-url='/mine/list']");
-      const showingAll = btn.textContent.includes("Hide");
-      rows.forEach(r => r.classList.toggle("hidden", showingAll));
-      btn.textContent = showingAll ? "Show All" : "Hide '/mine/list' Entries";
-      btn.classList.toggle("bg-indigo-600");
-      btn.classList.toggle("bg-red-600");
-    }
+  function showError(msg){
+    const e = document.getElementById("errorMessage");
+    e.textContent = msg;
+    e.classList.remove("hidden");
+    setTimeout(()=> e.classList.add("hidden"),4000);
+  }
 
-    initializeFirestoreListener();
-  </script>
+  function createTableRow(doc, index){
+    const data = doc.data();
+    return `
+      <tr class="fade-in hover:bg-gray-50 transition" data-id="${doc.id}">
+        <td class="px-4 py-2">${index}</td>
+        <td class="px-4 py-2">${data.timestamp||"N/A"}</td>
+        <td class="px-4 py-2">${data.country||"N/A"}</td>
+        <td class="px-4 py-2">${data.regionName||"N/A"}</td>
+        <td class="px-4 py-2">${data.city||"N/A"}</td>
+        <td class="px-4 py-2">${data.method||"N/A"}</td>
+        <td class="px-4 py-2">${data.source||"N/A"}</td>
+        <td class="px-4 py-2">${data.ip||"N/A"}</td>
+        <td class="px-4 py-2 truncate max-w-[250px]" title="${data.url}">${data.url||"N/A"}</td>
+      </tr>
+    `;
+  }
+
+  function updateLimit(value){
+    const n=parseInt(value);
+    if(n>0 && n<1000){ LIMITNUMBER=n; if(unsubscribe) unsubscribe(); document.getElementById("logsTableBody").innerHTML=""; initializeFirestoreListener();}
+  }
+
+  function toggleFilter(){
+    const btn=document.getElementById("toggleFilter");
+    const rows=document.querySelectorAll("tr[data-url='/mine/list']");
+    const showingAll=btn.textContent.includes("Hide");
+    rows.forEach(r=>r.classList.toggle("hidden",showingAll));
+    btn.textContent=showingAll?"Show All Entries":"Hide '/mine/list' Entries";
+    btn.classList.toggle("bg-indigo-600");
+    btn.classList.toggle("bg-red-600");
+  }
+
+  function initializeFirestoreListener(){
+    const spinner=document.getElementById("loadingSpinner");
+    spinner.classList.remove("hidden");
+    unsubscribe=db.collection("requests").orderBy("timestamp","desc").limit(LIMITNUMBER)
+      .onSnapshot(snapshot=>{
+        spinner.classList.add("hidden");
+        const body=document.getElementById("logsTableBody"); body.innerHTML="";
+        let idx=0;
+        snapshot.forEach(doc=>{ idx++; body.insertAdjacentHTML("beforeend",createTableRow(doc,idx));});
+      }, error=>{spinner.classList.add("hidden"); showError(error.message);});
+  }
+
+  initializeFirestoreListener();
+</script>
 </body>
 </html>
