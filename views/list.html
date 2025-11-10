@@ -217,7 +217,7 @@ function initializeFirestoreListener(){
           body.insertAdjacentHTML("afterbegin", createTableRow(change.doc, 1));
 
           // ✅ Show Chrome notification for each new document
-          showSystemNotification("New Firestore Entry", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
+          showSystemNotification("New Item Is Added", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
         }
       });
     },err=>{
