@@ -65,7 +65,7 @@
       Hide All Entries
     </button>
 
-    <button id="toggleStats" onclick="toggleStats()"
+    <!-- <button id="toggleStats" onclick="toggleStats()"
       class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-medium rounded-lg shadow transition">
       Hide Stats
     </button>
@@ -73,7 +73,7 @@
     <button id="toggleCharts" onclick="toggleCharts()"
       class="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium rounded-lg shadow transition">
       Hide Charts
-    </button>
+    </button> -->
 
     <div class="flex items-center gap-1">
       <label for="limitInput" class="text-xs font-medium">Limit:</label>
@@ -90,7 +90,7 @@
 </section>
 
 <!-- STATS (THINNER) -->
-<section id="statsSection" class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 fade-slide">
+<!-- <section id="statsSection" class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 fade-slide">
   <div class="glass p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center text-sm">
     <p class="text-xs text-gray-500 dark:text-gray-400">Total Requests</p>
     <p id="totalRequests" class="text-2xl font-bold counter mt-1">0</p>
@@ -103,10 +103,10 @@
     <p class="text-xs text-gray-500 dark:text-gray-400">Unique IPs</p>
     <p id="uniqueIPs" class="text-2xl font-bold counter mt-1">0</p>
   </div>
-</section>
+</section> -->
 
 <!-- CHARTS (THINNER) -->
-<section id="chartsSection" class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 px-6 fade-slide transition-all duration-500">
+<!-- <section id="chartsSection" class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 px-6 fade-slide transition-all duration-500">
   <div class="glass p-4 rounded-xl shadow">
     <h2 class="text-base font-semibold mb-2">Requests by Country</h2>
     <canvas id="countryChart" height="180"></canvas>
@@ -115,7 +115,7 @@
     <h2 class="text-base font-semibold mb-2">Requests Over Time (Last 24h)</h2>
     <canvas id="timeChart" height="180"></canvas>
   </div>
-</section>
+</section> -->
 
 <!-- MAIN TABLE -->
 <main class="w-full max-w-7xl mt-8 px-6 flex-1 flex flex-col fade-slide">
@@ -285,14 +285,14 @@ function initializeFirestoreListener(){
       stats.total++; idx++;
       body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
     });
-    animateCounter(document.getElementById("totalRequests"), stats.total);
-    animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
-    animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
-    updateCharts(snapshot.docs);
+    // animateCounter(document.getElementById("totalRequests"), stats.total);
+    // animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
+    // animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
+    //updateCharts(snapshot.docs);
   },err=>{spinner.classList.add("hidden");showError(err.message);});
 }
 
-initCharts();
+//initCharts();
 initializeFirestoreListener();
 document.getElementById("toggleDark").addEventListener("click",()=>document.documentElement.classList.toggle("dark"));
 </script>
