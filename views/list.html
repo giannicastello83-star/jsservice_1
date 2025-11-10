@@ -159,7 +159,7 @@ function createTableRow(doc,index){
   return `
     <tr class="fade-slide hover:bg-cyan-50 dark:hover:bg-slate-800 transition">
       <td class="px-4 py-2">${index}</td>
-      <td class="px-4 py-2">${d.timestamp||"N/A"}</td>
+      <td class="px-4 py-2">${d.timestamp?.toDate ? d.timestamp.toDate().toLocaleString() : d.timestamp || "N/A"}</td>
       <td class="px-4 py-2">${d.country||"N/A"}</td>
       <td class="px-4 py-2">${d.regionName||"N/A"}</td>
       <td class="px-4 py-2">${d.city||"N/A"}</td>

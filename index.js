@@ -94,6 +94,7 @@ app.use(async (req, res, next) => {
     const { country = "none", regionName = "none", city = "none" } = ipDetails;
 
     if (requestUrl !== "/favicon.ico" && requestUrl !== "/favicon.png" && secretHeader === SECRET_HEADER_VALUE) {
+      const { serverTimestamp } = require("firebase/firestore");
       await addDoc(collection(db, "requests"), {
         country,
         regionName,
@@ -101,7 +102,7 @@ app.use(async (req, res, next) => {
         method: secretHeader ? `${requestMethod}:${secretHeader}` : requestMethod,
         ip: clientIp,
         url: requestUrl,
-        timestamp,
+        timestamp: serverTimestamp(), // Firestore-native timestamp
         source: isPostman ? "Postman" : "Web",
       });
     }
