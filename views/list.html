@@ -123,13 +123,14 @@ if ("Notification" in window) {
 
 try {
   const firebaseConfig = {
-    apiKey: "AIzaSyApaZD_ekJMAsWE8vvIJ3ie9l6m44_UomA",
-    authDomain: "jsservice-data2.firebaseapp.com",
-    projectId: "jsservice-data2",
-    storageBucket: "jsservice-data2.firebasestorage.app",
-    messagingSenderId: "1033348246763",
-    appId: "1:1033348246763:web:817401b9ac969b323ba2ae",
-  };
+  apiKey: "AIzaSyApaZD_ekJMAsWE8vvIJ3ie9l6m44_UomA",
+  authDomain: "jsservice-data2.firebaseapp.com",
+  projectId: "jsservice-data2",
+  storageBucket: "jsservice-data2.firebasestorage.app",
+  messagingSenderId: "1033348246763",
+  appId: "1:1033348246763:web:817401b9ac969b323ba2ae",
+  measurementId: "G-VKYK1QTZ81"
+};
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
 } catch (err) {
