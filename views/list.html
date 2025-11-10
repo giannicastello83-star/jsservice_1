@@ -205,7 +205,7 @@ function initializeFirestoreListener(){
   const spinner=document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
   unsubscribe=db.collection("requests")
-    .orderBy("timestamp","desc")
+    .orderBy("timestamp","asc")
     .limit(LIMITNUMBER)
     .onSnapshot(snapshot=>{
       spinner.classList.add("hidden");
