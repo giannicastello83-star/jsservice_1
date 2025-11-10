@@ -89,31 +89,31 @@
   </div>
 </section>
 
-<!-- STATS -->
-<section id="statsSection" class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-6 px-6 fade-slide">
-  <div class="glass p-6 rounded-2xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center">
-    <p class="text-sm text-gray-500 dark:text-gray-400">Total Requests</p>
-    <p id="totalRequests" class="text-3xl font-bold counter mt-2">0</p>
+<!-- STATS (THINNER) -->
+<section id="statsSection" class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 fade-slide">
+  <div class="glass p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center text-sm">
+    <p class="text-xs text-gray-500 dark:text-gray-400">Total Requests</p>
+    <p id="totalRequests" class="text-2xl font-bold counter mt-1">0</p>
   </div>
-  <div class="glass p-6 rounded-2xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center">
-    <p class="text-sm text-gray-500 dark:text-gray-400">Unique Countries</p>
-    <p id="uniqueCountries" class="text-3xl font-bold counter mt-2">0</p>
+  <div class="glass p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center text-sm">
+    <p class="text-xs text-gray-500 dark:text-gray-400">Unique Countries</p>
+    <p id="uniqueCountries" class="text-2xl font-bold counter mt-1">0</p>
   </div>
-  <div class="glass p-6 rounded-2xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center">
-    <p class="text-sm text-gray-500 dark:text-gray-400">Unique IPs</p>
-    <p id="uniqueIPs" class="text-3xl font-bold counter mt-2">0</p>
+  <div class="glass p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center text-sm">
+    <p class="text-xs text-gray-500 dark:text-gray-400">Unique IPs</p>
+    <p id="uniqueIPs" class="text-2xl font-bold counter mt-1">0</p>
   </div>
 </section>
 
-<!-- CHARTS -->
-<section id="chartsSection" class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-6 mt-10 px-6 fade-slide transition-all duration-500">
-  <div class="glass p-6 rounded-2xl shadow">
-    <h2 class="text-lg font-semibold mb-3">Requests by Country</h2>
-    <canvas id="countryChart" height="200"></canvas>
+<!-- CHARTS (THINNER) -->
+<section id="chartsSection" class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 px-6 fade-slide transition-all duration-500">
+  <div class="glass p-4 rounded-xl shadow">
+    <h2 class="text-base font-semibold mb-2">Requests by Country</h2>
+    <canvas id="countryChart" height="180"></canvas>
   </div>
-  <div class="glass p-6 rounded-2xl shadow">
-    <h2 class="text-lg font-semibold mb-3">Requests Over Time (Last 24h)</h2>
-    <canvas id="timeChart" height="200"></canvas>
+  <div class="glass p-4 rounded-xl shadow">
+    <h2 class="text-base font-semibold mb-2">Requests Over Time (Last 24h)</h2>
+    <canvas id="timeChart" height="180"></canvas>
   </div>
 </section>
 
