@@ -65,6 +65,12 @@
       Hide All Entries
     </button>
 
+    <!-- ✅ NEW Show/Hide Stats Button -->
+    <button id="toggleStats" onclick="toggleStats()"
+      class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-medium rounded-lg shadow transition">
+      Hide Stats
+    </button>
+
     <!-- ✅ NEW Show/Hide Charts Button -->
     <button id="toggleCharts"
       onclick="toggleCharts()"
@@ -86,8 +92,8 @@
   </div>
 </section>
 
-<!-- STATS -->
-<section class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-6 px-6 fade-slide">
+<!-- ✅ STATS (Toggleable) -->
+<section id="statsSection" class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-3 gap-6 px-6 fade-slide">
   <div class="glass p-6 rounded-2xl shadow hover:shadow-lg transition transform hover:-translate-y-1 text-center">
     <p class="text-sm text-gray-500 dark:text-gray-400">Total Requests</p>
     <p id="totalRequests" class="text-3xl font-bold counter mt-2">0</p>
@@ -102,7 +108,7 @@
   </div>
 </section>
 
-<!-- ✅ CHARTS WRAPPER WITH TOGGLE -->
+<!-- CHARTS WRAPPER -->
 <section id="chartsSection" class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-6 mt-10 px-6 fade-slide transition-all duration-500">
   <div class="glass p-6 rounded-2xl shadow">
     <h2 class="text-lg font-semibold mb-3">Requests by Country</h2>
@@ -218,7 +224,15 @@ function toggleFilter(){
   btn.textContent=showingAll?"Show All Entries":"Hide All Entries";
 }
 
-// ✅ NEW FUNCTION: Toggle Charts Visibility
+// ✅ NEW FUNCTION: Toggle Stats
+function toggleStats(){
+  const section=document.getElementById("statsSection");
+  const btn=document.getElementById("toggleStats");
+  const isHidden=section.classList.toggle("hidden");
+  btn.textContent=isHidden?"Show Stats":"Hide Stats";
+}
+
+// ✅ Toggle Charts
 function toggleCharts(){
   const section=document.getElementById("chartsSection");
   const btn=document.getElementById("toggleCharts");
