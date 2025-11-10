@@ -13,9 +13,9 @@
 
   /* Table row hover */
   tbody tr { transition: background 0.3s, transform 0.2s; cursor: pointer; }
-  tbody tr:hover { background-color: rgba(99,102,241,0.1); transform: translateX(2px); }
-  tbody tr:nth-child(even) { background-color: rgba(243,244,246,0.5); }
-  body.dark tbody tr:nth-child(even) { background-color: rgba(55,65,81,0.5); }
+  tbody tr:hover { background-color: rgba(14,165,233,0.1); transform: translateX(2px); } /* cyan-400 overlay */
+  tbody tr:nth-child(even) { background-color: rgba(243,244,246,0.5); } /* gray-100 */
+  body.dark tbody tr:nth-child(even) { background-color: rgba(55,65,81,0.5); } /* gray-700 */
 
   td { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   td:hover { overflow: visible; white-space: normal; }
@@ -29,12 +29,12 @@
   ::-webkit-scrollbar-track { background:transparent; }
 </style>
 </head>
-<body id="body" class="bg-gray-50 dark:bg-gray-900 min-h-screen font-inter flex flex-col items-center p-6 transition-colors duration-500">
+<body id="body" class="bg-gray-50 dark:bg-gray-900 min-h-screen font-sans flex flex-col items-center p-6 transition-colors duration-500">
 
 <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-  <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Modern Firestore Dashboard</h1>
+  <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Interactive Firestore Dashboard</h1>
   <div class="flex gap-2 items-center">
-    <button id="toggleDark" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">Toggle Dark</button>
+    <button id="toggleDark" class="px-3 py-2 bg-cyan-500 dark:bg-cyan-600 text-white rounded hover:bg-cyan-600 dark:hover:bg-cyan-700 transition">Toggle Dark</button>
     <div id="errorMessage" class="hidden bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 px-4 py-2 rounded shadow text-sm transition-all"></div>
   </div>
 </header>
@@ -42,19 +42,19 @@
 <section class="w-full max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
   <div class="flex gap-3 items-center">
     <button id="toggleFilter" onclick="toggleFilter()"
-            class="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg font-medium transition-transform transform hover:scale-105">
+            class="px-4 py-2 bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 text-white rounded-lg font-medium transition-transform transform hover:scale-105">
       Hide '/mine/list' Entries
     </button>
     <div class="flex items-center gap-2">
       <label for="limitInput" class="text-sm font-medium text-gray-700 dark:text-gray-300">Limit:</label>
       <input type="number" id="limitInput" min="1" max="999" value="300"
              onchange="updateLimit(this.value)"
-             class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+             class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
     </div>
   </div>
   <div class="flex items-center gap-2">
     <input type="text" id="searchInput" placeholder="Search any column..."
-           class="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+           class="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
   </div>
 </section>
 
@@ -76,7 +76,7 @@
 <main class="w-full max-w-7xl bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex-1 flex flex-col">
   <div class="overflow-x-auto">
     <table id="logsTable" class="w-full text-sm border-collapse">
-      <thead class="bg-gradient-to-r from-indigo-600 to-indigo-500 dark:from-indigo-700 dark:to-indigo-600 text-white sticky top-0 shadow-md">
+      <thead class="bg-gradient-to-r from-cyan-600 to-indigo-500 dark:from-cyan-700 dark:to-indigo-600 text-white sticky top-0 shadow-md">
         <tr>
           <th class="px-4 py-3 cursor-pointer" onclick="sortTable(0)">#</th>
           <th class="px-4 py-3 cursor-pointer" onclick="sortTable(1)">Timestamp</th>
@@ -94,7 +94,7 @@
   </div>
 
   <div id="loadingSpinner" class="hidden flex justify-center items-center py-6">
-    <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+    <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
   </div>
 </main>
 
@@ -104,7 +104,7 @@ let unsubscribe = null;
 let db;
 let stats = { total:0, countries:new Set(), ips:new Set() };
 let allData = [];
-let sortOrder = Array(9).fill(true); // true=asc, false=desc
+let sortOrder = Array(9).fill(true);
 
 try {
   const firebaseConfig = {
@@ -131,7 +131,7 @@ function showError(msg){
 function createTableRow(doc,index){
   const data = doc.data();
   return `
-    <tr class="slide-in hover:bg-gray-50 dark:hover:bg-gray-700 transition text-gray-800 dark:text-gray-200" 
+    <tr class="slide-in hover:bg-cyan-100 dark:hover:bg-cyan-900 transition text-gray-800 dark:text-gray-200" 
         data-id="${doc.id}" data-url="${data.url||''}" data-country="${data.country||''}" data-ip="${data.ip||''}">
       <td class="px-4 py-2">${index}</td>
       <td class="px-4 py-2">${data.timestamp||"N/A"}</td>
@@ -177,7 +177,7 @@ function toggleFilter(){
   const showingAll=btn.textContent.includes("Hide");
   rows.forEach(r=>r.classList.toggle("hidden",showingAll));
   btn.textContent=showingAll?"Show All Entries":"Hide '/mine/list' Entries";
-  btn.classList.toggle("bg-indigo-600");
+  btn.classList.toggle("bg-cyan-600");
   btn.classList.toggle("bg-red-600");
 }
 
@@ -242,7 +242,7 @@ function sortTable(colIndex){
     return 0;
   });
   sortOrder[colIndex] = !asc;
-  applySearch(); // re-render filtered/sorted data
+  applySearch();
 }
 
 initializeFirestoreListener();
