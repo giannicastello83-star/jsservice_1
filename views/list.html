@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Modern Firestore Dashboard</title>
 <script>
+  // Enable Tailwind dark mode
   tailwind.config = {
     darkMode: 'class'
   }
@@ -12,23 +13,37 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.js"></script>
 <style>
+  /* Animations */
   .slide-in { animation: slideIn 0.4s ease forwards; }
   @keyframes slideIn { from {opacity:0; transform: translateY(-15px);} to {opacity:1; transform: translateY(0);} }
+
+  /* Table hover */
   tbody tr { transition: background 0.3s, transform 0.2s; cursor: pointer; }
   tbody tr:hover { background-color: rgba(14,165,233,0.1); transform: translateX(2px); }
   tbody tr:nth-child(even) { background-color: rgba(243,244,246,0.5); }
-  body.dark tbody tr:nth-child(even) { background-color: rgba(55,65,81,0.5); }
+  html.dark tbody tr:nth-child(even) { background-color: rgba(55,65,81,0.5); }
+
   td { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   td:hover { overflow: visible; white-space: normal; }
+
+  /* Counter animation */
   .counter { transition: all 0.5s ease; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { height:6px; width:6px; }
+  ::-webkit-scrollbar-thumb { background-color: rgba(100,116,139,0.6); border-radius:9999px; }
+  ::-webkit-scrollbar-track { background:transparent; }
 </style>
 </head>
-<body id="body" class="bg-gray-50 dark:bg-gray-900 min-h-screen font-sans flex flex-col items-center p-6 transition-colors duration-500">
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen font-sans flex flex-col items-center p-6 transition-colors duration-500">
 
 <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
   <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Interactive Firestore Dashboard</h1>
   <div class="flex gap-2 items-center">
-    <button id="toggleDark" class="px-3 py-2 bg-cyan-500 dark:bg-cyan-600 text-white rounded hover:bg-cyan-600 dark:hover:bg-cyan-700 transition">Toggle Dark</button>
+    <button id="toggleDark" 
+            class="px-3 py-2 bg-cyan-500 dark:bg-cyan-600 text-white rounded hover:bg-cyan-600 dark:hover:bg-cyan-700 transition">
+      Toggle Dark
+    </button>
     <div id="errorMessage" class="hidden bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 px-4 py-2 rounded shadow text-sm transition-all"></div>
   </div>
 </header>
@@ -37,7 +52,7 @@
   <div class="flex gap-3 items-center">
     <button id="toggleFilter" onclick="toggleFilter()"
             class="px-4 py-2 bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 text-white rounded-lg font-medium transition-transform transform hover:scale-105">
-      Hide '/mine/list' Entries
+      Hide All Entries
     </button>
     <div class="flex items-center gap-2">
       <label for="limitInput" class="text-sm font-medium text-gray-700 dark:text-gray-300">Limit:</label>
@@ -169,7 +184,7 @@ function toggleFilter(){
   const rows=document.querySelectorAll("tr[data-url='/mine/list']");
   const showingAll=btn.textContent.includes("Hide");
   rows.forEach(r=>r.classList.toggle("hidden",showingAll));
-  btn.textContent=showingAll?"Show All Entries":"Hide '/mine/list' Entries";
+  btn.textContent=showingAll?"Show All Entries":"Hide All Entries";
   btn.classList.toggle("bg-cyan-600");
   btn.classList.toggle("bg-red-600");
 }
@@ -179,7 +194,6 @@ function applySearch(){
   const body = document.getElementById("logsTableBody");
   body.innerHTML = "";
   let idx = 0;
-
   allData.forEach(doc => {
     const d = doc.data();
     const combined = `${d.timestamp||''} ${d.country||''} ${d.regionName||''} ${d.city||''} ${d.method||''} ${d.source||''} ${d.ip||''} ${d.url||''}`.toLowerCase();
@@ -206,7 +220,6 @@ function initializeFirestoreListener(){
       body.innerHTML="";
       stats = { total:0, countries:new Set(), ips:new Set() };
       let idx=0;
-
       snapshot.forEach(doc=>{
         const data = doc.data();
         if(data.country) stats.countries.add(data.country);
@@ -215,7 +228,6 @@ function initializeFirestoreListener(){
         idx++;
         body.insertAdjacentHTML("beforeend", createTableRow(doc, idx));
       });
-
       animateCounter(document.getElementById("totalRequests"), stats.total);
       animateCounter(document.getElementById("uniqueCountries"), stats.countries.size);
       animateCounter(document.getElementById("uniqueIPs"), stats.ips.size);
@@ -227,8 +239,9 @@ function initializeFirestoreListener(){
 
 initializeFirestoreListener();
 
+// Dark mode toggle works on <html>
 document.getElementById("toggleDark").addEventListener("click", ()=>{
-  document.getElementById("body").classList.toggle("dark");
+  document.documentElement.classList.toggle("dark");
 });
 </script>
 </body>
