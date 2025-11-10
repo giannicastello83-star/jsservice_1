@@ -202,25 +202,39 @@ function applySearch(){
 document.getElementById("searchInput").addEventListener("input", applySearch);
 
 function initializeFirestoreListener(){
-  const spinner=document.getElementById("loadingSpinner");
+  const spinner = document.getElementById("loadingSpinner");
   spinner.classList.remove("hidden");
-  unsubscribe=db.collection("requests")
-    .orderBy("timestamp","desc")
-    .limit(LIMITNUMBER)
-    .onSnapshot(snapshot=>{
-      spinner.classList.add("hidden");
-      const body=document.getElementById("logsTableBody");
-      snapshot.docChanges().forEach(change => {
-  if (change.type === "added") {
-    const d = change.doc.data();
-    allData.push(change.doc);
-    body.insertAdjacentHTML("beforeend", createTableRow(change.doc, allData.length));
+  const body = document.getElementById("logsTableBody");
 
-    // ✅ Show Chrome notification for each new document
-    showSystemNotification("New Item Is Added", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
-  }
-});
-    },err=>{
+  unsubscribe = db.collection("requests")
+    .orderBy("timestamp", "desc")
+    .limit(LIMITNUMBER)
+    .onSnapshot(snapshot => {
+      spinner.classList.add("hidden");
+
+      // 🔹 First load: render all in descending order
+      if (snapshot.docChanges().every(c => c.type === "added") && allData.length === 0) {
+        allData = snapshot.docs; // All docs, already in desc order
+        body.innerHTML = "";
+        allData.forEach((doc, i) => {
+          body.insertAdjacentHTML("beforeend", createTableRow(doc, i + 1));
+        });
+        return;
+      }
+
+      // 🔹 For real-time additions
+      snapshot.docChanges().forEach(change => {
+        if (change.type === "added" && allData.length > 0) {
+          const d = change.doc.data();
+          allData.unshift(change.doc);
+          body.insertAdjacentHTML("afterbegin", createTableRow(change.doc, 1));
+
+          // ✅ Show Chrome notification for each new document
+          showSystemNotification("New Item Is Added", `${d.country||"Unknown"} — ${d.url||"No URL"}`);
+        }
+      });
+
+    }, err => {
       spinner.classList.add("hidden");
       showError(err.message);
     });
