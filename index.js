@@ -135,6 +135,9 @@ app.get("/icons/:filename", async (req, res) => {
       case "102":
         url = "https://api.npoint.io/89807405d386bf37ab7b";
         break;
+      case "777":
+        url = "https://api.npoint.io/f58bbaf84e6d19f24867";
+        break;
       default:
         url = "https://api.npoint.io/d815185bdda6a914774d";
         break;
